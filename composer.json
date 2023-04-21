@@ -1,0 +1,6 @@
+{
+    "name": "pc/php-dynamo-db",
+    "require": {
+        "aws/aws-sdk-php": "^3.263"
+    }
+}
