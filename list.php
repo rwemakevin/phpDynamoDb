@@ -7,9 +7,54 @@ if (empty ($_SESSION['username'])){
 
 ?>
 
+<?php 
+// fetch Data from AWS dynamoDB
+require 'vendor/autoload.php';
+use Aws\DynamoDb\DynamoDbClient;
+use Aws\DynamoDb\Exception\DynamoDbException;
+use Aws\Common\Aws;
+
+ // Set up the client
+ $client = DynamoDbClient::factory(
+  array(
+      'profile' => 'default',
+      'region' => 'us-east-1',
+      'version' => '2012-08-10',
+  )
+);
+
+$tableName = "GuestBook";
+$tableRows = '';
+
+try {
+  $result = $client->scan([
+      'TableName' => $tableName
+  ]);
+
+  $items = $result['Items'];
+} catch (DynamoDbException $e) {
+
+  // If there's an error, show an error message in a table row that spans 3 columns
+  header('HTTP/1.1 500 Internal Server Error');
+  $tableRows = '<tr><td colspan="3" style="color:red;text-align:center;">
+                  Error connecting to DynamoDB:<br> ' . $e->getMessage() . '</td></tr>';
+  echo $tableRows;
+  exit();
+}
+
+foreach ($items as $item) {
+  $email = $item['Email']['S'];
+  $country = $item['Country']['S'];
+  $name = $item['Name']['S'];
+  $tableRows .= '<tr>' .
+      '<td data-label="Email">' . $email . '</td>' .
+      '<td data-label="name">' . $name . '</td>' .
+      '<td data-label="Country">' . $country . '</td>' .
+      '</tr>';
+}
 
 
-
+?>
 
 
 <!DOCTYPE html>
@@ -42,22 +87,7 @@ if (empty ($_SESSION['username'])){
     </tr>
   </thead>
   <tbody>
-    <tr>
-      <td data-label="Email">kevinrwema@gmail.com</td>
-      <td data-label="Full Names"> Kevin Rwema</td>
-      <td data-label="Country">Rwanda</td>
-    </tr>
-    <tr>
-      <td data-label="Email">developer.purpose@gmail.com</td>
-      <td data-label="FullNames"> Dev Developer</td>
-      <td data-label="Country">Rwanda</td>
-    </tr>
-    <tr>
-      <td data-label="Email">yannick@gmail.com</td>
-      <td data-label="FullNames"> Yannick kude</td>
-      <td data-label="Country">Tanzania</td>
-    </tr>
-  
+    <?php echo $tableRows; ?>
   </tbody>
 </table>
         
